@@ -25,9 +25,13 @@ AdmCtrlDenyRulesType = "deny"
 
 AdmCtrlRuleTypeDisplay = {AdmCtrlAllowRulesType: 'allow', AdmCtrlDenyRulesType: 'deny'}
 
-SingleValueCrt = {"cveHighCount": True,
+SingleValueCrt = {"cveCriticalCount": True, # count of critical CVEs
+                  "cveHighCount": True, # count of critical & high CVEs (for backward compatibility)
+                  "cveHighCountNoCritical": True, # count of high CVEs only
                   "cveMediumCount": True,
-                  "cveHighWithFixCount": True,
+                  "cveCriticalWithFixCount": True, # count of "critical with fix" CVEs
+                  "cveHighWithFixCount": True, # count of "critical with fix" & "high with fix" CVEs (for backward compatibility)
+                  "cveHighWithFixCountNoCritical": True, # count of "high with fix" CVEs only
                   "cveScoreCount": True,
                   "cveNames": False,
                   "envVars": False,
@@ -62,9 +66,13 @@ SingleValueCrt = {"cveHighCount": True,
                   "storageClassName": True,
                   }
 
-NamesDisplay = {"cveHighCount": "High severity CVE count",
-                "cveMediumCount": "Medium severity CVE count",
-                "cveHighWithFixCount": "Count of high severity CVEs that have fix",
+NamesDisplay = {"cveCriticalCount": "Count of critical severity CVEs",
+                "cveHighCount": "Count of critical and high severity CVEs", # for backward compatibility
+                "cveHighCountNoCritical": "Count of high severity CVEs",
+                "cveMediumCount": "Count of medium severity CVEs",
+                "cveCriticalWithFixCount": "Count of critical severity CVEs that have fix",
+                "cveHighWithFixCount": "Count of critical and high severity CVEs that have fix", # for backward compatibility
+                "cveHighWithFixCountNoCritical": "Count of high severity CVEs that have fix",
                 "cveScoreCount": "Count of CVEs whose score",
                 "cveNames": "CVE names",
                 "envVars": "Environment variables",
@@ -104,9 +112,13 @@ SaBindRiskyRoleDisplay = {
 }
 
 NamesDisplay2 = {  # for criteria that has sub-criteria
-    "cveHighCount": "More than {v1} high severity CVEs that were reported before {v2} days ago",
+    "cveCriticalCount": "More than {v1} critical severity CVEs that were reported before {v2} days ago",
+    "cveHighCount": "More than {v1} critical and high severity CVEs that were reported before {v2} days ago", # for backward compatibility
+    "cveHighCountNoCritical": "More than {v1} high severity CVEs that were reported before {v2} days ago",
     "cveMediumCount": "More than {v1} medium severity CVEs that were reported before {v2} days ago",
-    "cveHighWithFixCount": "More than {v1} high severity CVEs with fix that were reported before {v2} days ago",
+    "cveCriticalWithFixCount": "More than {v1} critical severity CVEs with fix that were reported before {v2} days ago",
+    "cveHighWithFixCount": "More than {v1} critical and high severity CVEs with fix that were reported before {v2} days ago", # for backward compatibility
+    "cveHighWithFixCountNoCritical": "More than {v1} high severity CVEs with fix that were reported before {v2} days ago",
     "cveScoreCount": "More than {v1} CVEs whose score >= {v2}",
     "resourceLimit": "Resource limit{v1}: {v2}",
 }
@@ -567,7 +579,8 @@ def _parse_adm_criteria(criteria):
             click.echo(msg)
             return False, None
         crtName = c3[0]
-        if crtName == "cveHighCount" or crtName == "cveMediumCount" or crtName == "cveHighWithFixCount" or crtName == "cveScoreCount":
+        if crtName == "cveCriticalCount" or crtName == "cveHighCount" or crtName == "cveHighCountNoCritical" or crtName == "cveMediumCount" or \
+            crtName == "cveCriticalWithFixCount" or crtName == "cveHighWithFixCount" or crtName == "cveHighWithFixCountNoCritical" or crtName == "cveScoreCount":
             c2 = c.split("/")
             if len(c2) == 0:
                 click.echo("""Error: Invalid option value "--criteria".""")
@@ -615,7 +628,7 @@ def _parse_adm_criteria(criteria):
               help="It's a local or federal rule")
 # @click.option("--category", default="Kubernetes", help="rule category. default: Kubernetes")
 @click.option("--criteria", multiple=True,
-              help="Format is name:op:value{/subName:op:value}. name can be annotations, allowPrivEscalation, count, cpuLimit, cpuRequest, cveHighCount, cveHighWithFixCount, cveMediumCount, cveNames, cveScoreCount, envVarSecrets, image, imageCompliance, imageNoOS, imageScanned, imageSigned, imageVerifiers, labels, memoryLimit, memoryRequest, modules, mountVolumes, namespace, pspCompliance, resourceLimit. subName can be publishDays, runAsRoot, shareIpcWithHost, shareNetWithHost, sharePidWithHost, storageClassName, user, userGroups, violatePssPolicy. Format for criteira named customPath is name:op:path:valuetype:value. Format for criteria named saBindRiskyRole is name:op:value. See command: show admission rule options")
+              help="Format is name:op:value{/subName:op:value}. name can be annotations, allowPrivEscalation, count, cpuLimit, cpuRequest, cveCriticalCount, cveHighCount, cveHighCountNoCritical, cveCriticalWithFixCount, cveHighWithFixCount, cveHighWithFixCountNoCritical, cveMediumCount, cveNames, cveScoreCount, envVarSecrets, image, imageCompliance, imageNoOS, imageScanned, imageSigned, imageVerifiers, labels, memoryLimit, memoryRequest, modules, mountVolumes, namespace, pspCompliance, resourceLimit. subName can be publishDays, runAsRoot, shareIpcWithHost, shareNetWithHost, sharePidWithHost, storageClassName, user, userGroups, violatePssPolicy. Format for criteira named customPath is name:op:path:valuetype:value. Format for criteria named saBindRiskyRole is name:op:value. See command: show admission rule options")
 @click.option("--disable/--enable", default=False, help="Disable/enable the admission control rule [default: --enable]")
 @click.option("--mode", default="", type=click.Choice(['','monitor', 'protect']), help="Rule mode, only for deny rules")
 @click.option("--target", required=False, multiple=True, help="Elevate this rule for what type of containers. Supported values: init_containers, containers, ephemeral_containers")
@@ -711,7 +724,7 @@ def set_admission_state(data, disable, mode, client_mode):
 @click.option("--scope", default="local", type=click.Choice(['fed', 'local']), show_default=True, help="Obsolete")
 # @click.option("--category", default="Kubernetes", show_default=True, help="Rule category")
 @click.option("--criteria", multiple=True,
-              help="Format is name:op:value{/subName:op:value}. name can be annotations, allowPrivEscalation, count, cpuLimit, cpuRequest, cveHighCount, cveHighWithFixCount, cveMediumCount, cveNames, cveScoreCount, envVarSecrets, image, imageCompliance, imageNoOS, imageScanned, imageSigned, imageVerifiers, labels, memoryLimit, memoryRequest, modules, mountVolumes, namespace, pspCompliance, resourceLimit. subName can be publishDays, runAsRoot, shareIpcWithHost, shareNetWithHost, sharePidWithHost, storageClassName, user, userGroups, violatePssPolicy. Format for criteira named customPath is name:op:path:valuetype:value. Format for criteria named saBindRiskyRole is name:op:value. See command: show admission rule options")
+              help="Format is name:op:value{/subName:op:value}. name can be annotations, allowPrivEscalation, count, cpuLimit, cpuRequest, cveCriticalCount, cveHighCount, cveHighCountNoCritical, cveCriticalWithFixCount, cveHighWithFixCount, cveHighWithFixCountNoCritical, cveMediumCount, cveNames, cveScoreCount, envVarSecrets, image, imageCompliance, imageNoOS, imageScanned, imageSigned, imageVerifiers, labels, memoryLimit, memoryRequest, modules, mountVolumes, namespace, pspCompliance, resourceLimit. subName can be publishDays, runAsRoot, shareIpcWithHost, shareNetWithHost, sharePidWithHost, storageClassName, user, userGroups, violatePssPolicy. Format for criteira named customPath is name:op:path:valuetype:value. Format for criteria named saBindRiskyRole is name:op:value. See command: show admission rule options")
 @click.option("--enable", "state", flag_value='enable', help="Enable the admission control rule")
 @click.option("--disable", "state", flag_value='disable', help="Enable the admission control rule")
 @click.option("--mode", required=False, type=click.Choice(['', 'monitor', 'protect']), help="Rule mode, only for deny rules")
