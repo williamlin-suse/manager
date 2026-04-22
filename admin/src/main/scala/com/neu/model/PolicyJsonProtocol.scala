@@ -39,7 +39,7 @@ object PolicyJsonProtocol extends DefaultJsonProtocol with LazyLogging {
     ApplicationListWrap.apply
   )
 
-  given scanConfigFormat: RootJsonFormat[ScanConfig]         = jsonFormat2(ScanConfig.apply)
+  given scanConfigFormat: RootJsonFormat[ScanConfig]         = jsonFormat3(ScanConfig.apply)
   given scanConfigWrapFormat: RootJsonFormat[ScanConfigWrap] = jsonFormat1(ScanConfigWrap.apply)
 
   given ruleConfigFormat: RootJsonFormat[RuleConfig]         = jsonFormat8(RuleConfig.apply)
@@ -274,6 +274,7 @@ object PolicyJsonProtocol extends DefaultJsonProtocol with LazyLogging {
 }
 
 case class ScanConfig(
+  auto_scan: Option[Boolean],
   enable_auto_scan_workload: Option[Boolean],
   enable_auto_scan_host: Option[Boolean]
 )
